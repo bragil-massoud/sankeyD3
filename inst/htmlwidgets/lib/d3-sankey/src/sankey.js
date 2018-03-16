@@ -139,15 +139,16 @@ d3.sankey = function() {
     
     function link(d) {
       
+      
       var x0 = d.source.x + d.source.dx - nodeCornerRadius,  // x source point
-          x1 = d.target.x  + nodeCornerRadius,               // x target point
+          x1 = (d.target ? d.target.x : d.source.x + d.source.dx * 3) + nodeCornerRadius,               // x target point
           xi = d3.interpolateNumber(x0, x1),
           x2 = xi(curvature),
           x3 = xi(1 - curvature);
 
 
       var y0 = d.source.y + d.sy,
-          y1 = d.target.y + d.ty,
+          y1 = d.target ? d.target.y + d.ty : d.source.y + d.sy * 2,
           y2 = y1 + d.dy,
           y3 = y0 + d.dy;
 
@@ -178,17 +179,23 @@ d3.sankey = function() {
           case "l-bezier": // from @michealgasser pull request #120 to d3/d3-plugins
             y0 = d.source.y + d.sy + d.dy / 2;
             y1 = d.target.y + d.ty + d.dy / 2;
-            x4 = x0 + d.source.dx/4
-            x5 = x1 - d.target.dx/4
-            x2 = Math.max(xi(curvature), x4+d.dy)
-            x3 = Math.min(xi(curvature), x5-d.dy)
+            x4 = x0 + d.source.dx/4;
+            x5 = x1 - d.target.dx/4;
+            x2 = Math.max(xi(curvature), x4+d.dy);
+            x3 = Math.min(xi(curvature), x5-d.dy);
             ld = M(x0,y0) + H(x4) + C(x2,y0, x3,y1, x5,y1) + H(x1);
             break;
           case "bezier":
           default:
-            y0 = d.source.y + d.sy + d.dy / 2;
-            y1 = d.target.y + d.ty + d.dy / 2;
-            ld = M(x0,y0) + C(x2,y0, x3,y1, x1,y1);
+            if(d.target) {
+              y0 = d.source.y + d.sy + d.dy / 2;
+              y1 = (d.target ? d.target.y + d.ty + d.dy / 2 : d.source.y + d.sy * 2) + 0.01; // shift a little to avoid empty bounding box svg problem with gradients
+              ld = M(x0,y0) + C(x2,y0, x3,y1, x1,y1);
+            } else {
+              y0 = d.source.y + d.source.dy - d.dy / 2;
+              y1 = d.source.y + d.source.dy - d.dy / 2 + 0.01; // shift a little to avoid empty bounding box svg problem with gradients
+              ld = M(x0,y0) + C(x2,y0, x3,y1, x1,y1);
+            }
             break;
         }
       }
@@ -221,7 +228,9 @@ d3.sankey = function() {
       if (typeof source === "number") source = link.source = nodes[link.source];
       if (typeof target === "number") target = link.target = nodes[link.target];
       source.sourceLinks.push(link);
-      target.targetLinks.push(link);
+      if(link.target) {
+        target.targetLinks.push(link);
+      }
     });
   }
 
@@ -543,6 +552,7 @@ d3.sankey = function() {
       });
 
       function weightedTarget(link) {
+        if(!link.target) return 0;
         return center(link.target) * link.value;
       }
     }
@@ -626,6 +636,9 @@ d3.sankey = function() {
     }
 
     function ascendingTargetDepth(a, b) {
+      // sort exit links without target to bottom
+      if(!a.target) return  1;
+      if(!b.target) return -1;
       return a.target.y - b.target.y;
     }
   }

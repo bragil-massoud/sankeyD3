@@ -69,9 +69,10 @@ HTMLWidgets.widget({
         var zoom = d3.zoom().scaleExtent([.75, 3]);    
 
         var color = eval(options.colourScale);
+        var link_color = eval(options.linkColorScale);
         
         var color_node = function color_node(d){
-          if (d.group){
+          if (d.group != undefined){
             return color(d.group);
           } else {
             return options.linkColor;
@@ -79,8 +80,8 @@ HTMLWidgets.widget({
         }
 
         var color_link = function color_link(d) {
-          if (d.group){
-            return color(d.group);
+          if (d.group != undefined){
+            return link_color(d.group);
           } else if (options.linkGradient) {
             return "url(#linearLinkGradient)";
           } else {
@@ -205,6 +206,27 @@ HTMLWidgets.widget({
           .style("stop-opacity", 1)
         }
         
+         var olg = defs.append("linearGradient")
+          .attr("id", "opacityLinearLinkGradient")
+          .attr("x1", "0%")
+          .attr("x2", "100%") // horizontal gradient
+          .attr("y1", "0%")
+          .attr("y2", "0%");
+
+          olg.append("stop")
+          .attr("offset", "0%")
+          .style("stop-color", "#FF0000")
+          .style("stop-opacity", 1);
+          
+          olg.append("stop")
+          .attr("offset", "50%")
+          .style("stop-color", "#FF0000")
+          .style("stop-opacity", 1);
+        
+          olg.append("stop")
+          .attr("offset", "100%")
+          .style("stop-color", "#FF0000")
+          .style("stop-opacity", 0);
        
         if (options.nodeShadow) {
           // drop shadow definitions from http://bl.ocks.org/cpbotha/5200394
@@ -334,7 +356,7 @@ HTMLWidgets.widget({
             });
 
         // add backwards class to cycles
-        link.classed('backwards', function (d) { return d.target.x < d.source.x; });
+        link.classed('backwards', function (d) { if(!d.target) return false; return d.target.x < d.source.x; });
 
         svg.selectAll(".link.backwards")
             .style("stroke-dasharray","9,1")
@@ -467,7 +489,7 @@ HTMLWidgets.widget({
         // note: u2192 is right-arrow
         link.append("title")
             .text(function(d) { 
-                return d.source.name + " \u2192 " + d.target.name +
+                return d.source.name + " \u2192 " + (d.target ? d.target.name : '') +
                 " \r\n" + format(d.value) + " " + options.units; });
 
         node
@@ -492,9 +514,9 @@ HTMLWidgets.widget({
                 if (options.nodeShadow) { return( "url(#drop-shadow)");  } } )
             .append("title")
             .attr("class", "tooltip")
-            .attr("title", function(d) { return format(d.value); })
+            .attr("title", function(d) { return format(d.display_value); })
             .text(function(d) { 
-                return d.name + " \r\n" + format(d.value) + 
+                return d.name + " \r\n" + format(d.display_value) + 
                 " " + options.units; });
 
         node
@@ -518,10 +540,10 @@ HTMLWidgets.widget({
             .append("text")
             .attr("x", sankey.nodeWidth()/2)
             .attr("text-anchor", "middle")
-            .attr("dy", "-" + (options.nodeStrokeWidth + .1 ) + "em")
+            .attr("dy", "+" + (options.nodeStrokeWidth + .1 ) + "em")
             .attr("transform", null)
             .attr("class", "node-number")
-            .text(function(d) { return format(d.value); })
+            .text(function(d) { return d.value > options.min_node_value_shown ? format(d.value) : '' })
             .style("cursor", "move")
             .style("font-size", ( options.fontSize - 2) + "px")
             .style("font-family", options.fontFamily ? options.fontFamily : "inherit");

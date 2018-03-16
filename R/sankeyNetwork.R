@@ -145,13 +145,15 @@ sankeyNetwork <- function(Links, Nodes, Source, Target, Value,
     height = NULL, width = NULL, iterations = 32, zoom = FALSE, align = "justify",
     showNodeValues = TRUE, linkType = "bezier", curvature = .5,  linkColor = "#A0A0A0",
     nodeLabelMargin = 2, linkOpacity = .5, linkGradient = FALSE, nodeShadow = FALSE, 
-    scaleNodeBreadthsByString = FALSE, xScalingFactor = 1) 
+    scaleNodeBreadthsByString = FALSE, xScalingFactor = 1,
+    linkColorScale = colourScale, min_node_value_shown = -1) 
 {
     # Check if data is zero indexed
     check_zero(Links[, Source], Links[, Target])
     
     # Hack for UI consistency. Think of improving.
     colourScale <- as.character(colourScale)
+    linkColorScale <- as.character(linkColorScale)
     
     # If tbl_df convert to plain data.frame
     Links <- tbl_df_strip(Links)
@@ -205,7 +207,7 @@ sankeyNetwork <- function(Links, Nodes, Source, Target, Value,
     
     # create options
     options = list(NodeID = NodeID, NodeGroup = NodeGroup, LinkGroup = LinkGroup, 
-        colourScale = colourScale, fontSize = fontSize, fontFamily = fontFamily, 
+        colourScale = colourScale, linkColorScale = linkColorScale, fontSize = fontSize, fontFamily = fontFamily, 
         nodeWidth = nodeWidth, nodePadding = nodePadding, nodeStrokeWidth = nodeStrokeWidth,
         nodeCornerRadius = nodeCornerRadius, dragX = dragX, dragY = dragY,
         numberFormat = numberFormat, orderByPath = orderByPath,
@@ -215,7 +217,7 @@ sankeyNetwork <- function(Links, Nodes, Source, Target, Value,
         showNodeValues = showNodeValues, align = align, xAxisDomain = xAxisDomain,
         title = title, nodeLabelMargin = nodeLabelMargin, 
         linkColor = linkColor, linkOpacity = linkOpacity, linkGradient = linkGradient, nodeShadow = nodeShadow,
-        scaleNodeBreadthsByString = scaleNodeBreadthsByString, xScalingFactor = xScalingFactor)
+        scaleNodeBreadthsByString = scaleNodeBreadthsByString, xScalingFactor = xScalingFactor, min_node_value_shown = min_node_value_shown)
     
     # create widget
     htmlwidgets::createWidget(name = "sankeyNetwork", x = list(links = LinksDF, 
